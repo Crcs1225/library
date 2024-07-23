@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1098832108683",
+    "project_id": "library-reservation-e95bf",
+    "storage_bucket": "library-reservation-e95bf.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1098832108683:android:6a17fed7e49ac28f64c88e",
+        "android_client_info": {
+          "package_name": "com.example.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBSwkYquyTZV2CEr0gl5TI1tn_Hpv4gOsc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1098832108683:android:f7bc9ecc4ed359c164c88e",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBSwkYquyTZV2CEr0gl5TI1tn_Hpv4gOsc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
