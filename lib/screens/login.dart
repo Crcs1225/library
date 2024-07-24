@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -71,11 +72,14 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo and Tagline
-                const Column(
+                Column(
                   children: [
                     // Replace with your logo widget or image
-                    Icon(Icons.library_books,
-                        size: 100, color: Colors.redAccent),
+                    SvgPicture.asset(
+                      'assets/bsu-log.svg',
+                      width: 200,
+                      height: 200,
+                    ),
                     SizedBox(height: 16),
                     Text(
                       'Library Seat Reservation',

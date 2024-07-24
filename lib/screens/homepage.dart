@@ -144,7 +144,8 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Library Seat Reservation'),
-          centerTitle: true,
+        centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -157,11 +158,13 @@ class _HomePageState extends State<HomePage> {
             if (snapshot.hasError) {
               return Center(child: Text('Error: ${snapshot.error}'));
             }
-        
+
             final seats = snapshot.data?.docs ?? [];
-            final availableSeats = seats.where((seat) => !seat['reserved']).toList();
-            final reservedSeats = seats.where((seat) => seat['reserved']).toList();
-        
+            final availableSeats =
+                seats.where((seat) => !seat['reserved']).toList();
+            final reservedSeats =
+                seats.where((seat) => seat['reserved']).toList();
+
             return SingleChildScrollView(
               child: Column(
                 children: [
