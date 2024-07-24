@@ -24,6 +24,7 @@ class _AdminPageState extends State<AdminPage> {
       TextEditingController();
   final TextEditingController _deleteUserEmailController =
       TextEditingController();
+  final TextEditingController _seatDetailsController = TextEditingController();
 
   @override
   void dispose() {
@@ -34,6 +35,7 @@ class _AdminPageState extends State<AdminPage> {
     _seatController.dispose();
     _studentIdForReservationController.dispose();
     _deleteUserEmailController.dispose();
+    _seatDetailsController.dispose();
     super.dispose();
   }
 
@@ -41,6 +43,68 @@ class _AdminPageState extends State<AdminPage> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  Map<String, dynamic> _seatDetails = {};
+
+  void _fetchSeatDetails() async {
+    // Parse the seat number input as an integer
+    final seatNumberStr = _seatDetailsController.text;
+    final int? seatNumber = int.tryParse(seatNumberStr);
+
+    if (seatNumber != null) {
+      // Fetch seat details from Firestore
+      var seatQuery = await FirebaseFirestore.instance
+          .collection('seats')
+          .where('seatNumber',
+              isEqualTo: seatNumber) // Assuming seatNumber is a field
+          .limit(1) // Limit to one document
+          .get();
+
+      if (seatQuery.docs.isNotEmpty) {
+        var seatData = seatQuery.docs.first.data();
+        bool isReserved = seatData['reserved'] ?? false;
+        String status;
+
+        if (isReserved) {
+          var reservedByUid = seatData['reservedBy'];
+          if (reservedByUid != null) {
+            // Fetch student ID from users collection
+            var userDoc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(reservedByUid)
+                .get();
+
+            if (userDoc.exists) {
+              var userData = userDoc.data();
+              var studentId = userData?['studentId'] ?? 'Unknown';
+              status = studentId;
+            } else {
+              status = 'User not found';
+            }
+          } else {
+            status = 'Reserved but user info missing';
+          }
+        } else {
+          status = 'Available';
+        }
+
+        setState(() {
+          _seatDetails = {
+            'seatNumber': seatNumber,
+            'status': status,
+          };
+        });
+      } else {
+        setState(() {
+          _seatDetails = {'status': 'Not Found'};
+        });
+      }
+    } else {
+      setState(() {
+        _seatDetails = {'status': 'Invalid seat number'};
+      });
+    }
   }
 
   Widget _buildMonitorPage() {
@@ -803,6 +867,65 @@ class _AdminPageState extends State<AdminPage> {
                         ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+            // Card for viewing seat details
+            Card(
+              elevation: 4,
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('View Seat Details',
+                        style: TextStyle(fontSize: 20)),
+                    TextField(
+                      controller: _seatDetailsController,
+                      decoration: InputDecoration(
+                        labelText: 'Seat Number',
+                        filled: true,
+                        fillColor: Colors.grey.withOpacity(0.2),
+                        contentPadding: const EdgeInsets.all(16.0),
+                        enabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.transparent),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    InkWell(
+                      onTap: _fetchSeatDetails,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent,
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Fetch Details',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _seatDetails.isNotEmpty
+                        ? Text(
+                            'Seat Number: ${_seatDetails['seatNumber']}\n'
+                            'Status: ${_seatDetails['status']}'
+                            '${_seatDetails.containsKey('reservedBy') ? "\nReserved By: ${_seatDetails['reservedBy']}" : ""}',
+                            style: const TextStyle(fontSize: 16),
+                          )
+                        : const Text('No details available.',
+                            style: TextStyle(fontSize: 16)),
                   ],
                 ),
               ),
