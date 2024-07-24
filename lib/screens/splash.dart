@@ -44,7 +44,7 @@ class SplashScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SvgPicture.asset(
-              'assets/bsu-log.svg',
+              'assets/bsu-logo.svg',
               width: 200,
               height: 200,
             ),

@@ -15,127 +15,120 @@ class _HomePageState extends State<HomePage> {
   final Stream<QuerySnapshot> _seatsStream =
       FirebaseFirestore.instance.collection('seats').snapshots();
 
-  void _toggleReservation(String seatId, bool isReserved) async {
+  Future<void> _reserveSeats(List<String> seatNumbers) async {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No user logged in')),
+      );
+      return;
+    }
+
+    // Track errors for each seat number
+    final errorMessages = <String>[];
+
     try {
-      await _firestore.collection('seats').doc(seatId).update({
-        'reserved': !isReserved,
-      });
+      for (var seatNumberString in seatNumbers) {
+        final seatNumber = int.tryParse(seatNumberString); // Convert to int
+
+        if (seatNumber == null) {
+          // Skip invalid seat numbers and add an error message
+          errorMessages.add('Invalid seat number: $seatNumberString');
+          continue;
+        }
+
+        final seatQuery = await _firestore
+            .collection('seats')
+            .where('seatNumber', isEqualTo: seatNumber)
+            .limit(1)
+            .get();
+
+        if (seatQuery.docs.isNotEmpty) {
+          final seatDoc = seatQuery.docs.first;
+          final seatId = seatDoc.id;
+          final isReserved = seatDoc['reserved'];
+          final reservedBy = seatDoc['reservedBy'];
+
+          if (!isReserved || (reservedBy == user.uid)) {
+            // Allow reservation if the seat is not reserved or reserved by the same user
+            await _firestore.collection('seats').doc(seatId).update({
+              'reserved': true,
+              'reservedBy': user.uid,
+            });
+          } else {
+            // Add an error message if the seat is reserved by someone else
+            errorMessages.add(
+                'Seat number $seatNumber is already reserved by another user.');
+          }
+        } else {
+          // Add an error message if the seat number is not found
+          errorMessages.add('Seat number $seatNumber not found.');
+        }
+      }
+
+      // Show success message if no errors occurred
+      if (errorMessages.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Seats reserved successfully')),
+        );
+      } else {
+        // Show all error messages
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessages.join('\n'))),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update seat: $e')),
+        SnackBar(content: Text('Failed to reserve seats: $e')),
       );
     }
   }
 
-  Future<void> _reserveGroup() async {
-    // Show a bottom sheet to select the number of seats to reserve
-    showModalBottomSheet(
+  Future<void> _showReservationDialog() async {
+    final seatNumbersController = TextEditingController();
+    final result = await showDialog<List<String>>(
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            int groupSize = 2; // Default group size
-
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Reserve Seats for Group',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  Slider(
-                    value: groupSize.toDouble(),
-                    min: 1,
-                    max: 10,
-                    divisions: 9,
-                    label: groupSize.toString(),
-                    onChanged: (value) {
-                      setState(() {
-                        groupSize = value.toInt();
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      _findAndReserveGroup(groupSize);
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Reserve'),
-                  ),
-                ],
+        return AlertDialog(
+          title: const Text('Reserve Seats'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Enter seat numbers separated by commas:'),
+              TextField(
+                controller: seatNumbersController,
+                decoration: const InputDecoration(hintText: 'e.g. 1, 2, 3'),
+                keyboardType: TextInputType.number,
               ),
-            );
-          },
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(context, <String>[]), // Return empty list
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final seatNumbers = seatNumbersController.text
+                    .split(',')
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty) // Ensure non-empty strings
+                    .toList();
+                Navigator.pop(context, seatNumbers);
+              },
+              child: const Text('Reserve'),
+            ),
+          ],
         );
       },
     );
-  }
 
-  Future<void> _findAndReserveGroup(int groupSize) async {
-    try {
-      final seatsSnapshot = await _firestore
-          .collection('seats')
-          .where('reserved', isEqualTo: false)
-          .orderBy('seatNumber')
-          .get();
-      final availableSeats = seatsSnapshot.docs;
-
-      List<String> seatsToReserve = [];
-      int consecutiveCount = 0;
-
-      for (var seat in availableSeats) {
-        seatsToReserve.add(seat.id);
-        consecutiveCount++;
-
-        if (consecutiveCount == groupSize) {
-          break;
-        }
-      }
-
-      if (seatsToReserve.length == groupSize) {
-        final user = _auth.currentUser;
-
-        if (user != null) {
-          // Update Firestore with reserved seats
-          for (var seatId in seatsToReserve) {
-            await _firestore
-                .collection('seats')
-                .doc(seatId)
-                .update({'reserved': true});
-          }
-
-          // Update the user's profile with the reserved seats
-          final userDoc = _firestore.collection('users').doc(user.uid);
-          final userSnapshot = await userDoc.get();
-          final reservedSeats =
-              (userSnapshot.data()?['reservedSeats'] as List?) ?? [];
-
-          await userDoc.update({
-            'reservedSeats': [...reservedSeats, ...seatsToReserve],
-          });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Group reserved successfully')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No user logged in')),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Not enough consecutive seats available')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to reserve group: $e')),
-      );
+    if (result != null && result.isNotEmpty) {
+      // Convert result to List<String> if necessary
+      final seatNumbers = result.map((e) => e.toString()).toList();
+      _reserveSeats(seatNumbers);
     }
   }
 
@@ -162,14 +155,37 @@ class _HomePageState extends State<HomePage> {
             final seats = snapshot.data?.docs ?? [];
             final availableSeats =
                 seats.where((seat) => !seat['reserved']).toList();
-            final reservedSeats =
-                seats.where((seat) => seat['reserved']).toList();
+            seats.where((seat) => seat['reserved']).toList();
 
             return SingleChildScrollView(
               child: Column(
                 children: [
-                  _buildSeatsSection('Available Seats', availableSeats),
-                  _buildSeatsSection('Reserved Seats', reservedSeats),
+                  Card(
+                    elevation: 4,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.event_seat, size: 40),
+                          const SizedBox(width: 16),
+                          Text(
+                            '${availableSeats.length} seats available',
+                            style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.redAccent),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSeatsSection('Seats', seats),
                 ],
               ),
             );
@@ -177,63 +193,71 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _reserveGroup,
-        child: const Icon(Icons.group_add),
-        backgroundColor: Colors.redAccent,
-        tooltip: 'Reserve Group',
+        onPressed: _showReservationDialog,
+        child: const Icon(
+          Icons.add,
+          color: Colors.redAccent,
+        ),
+        backgroundColor: Colors.white,
+        tooltip: 'Reserve Seats',
       ),
     );
   }
 
   Widget _buildSeatsSection(String title, List<QueryDocumentSnapshot> seats) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 5, // 5 seats per row
-              crossAxisSpacing: 4.0,
-              mainAxisSpacing: 4.0,
-            ),
-            itemCount: seats.length,
-            itemBuilder: (context, index) {
-              final seatDoc = seats[index];
-              final bool isReserved = seatDoc['reserved'];
-              final String seatId = seatDoc.id;
+        ),
+        const SizedBox(height: 8),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3, // 3 seats per row
+            crossAxisSpacing: 8.0,
+            mainAxisSpacing: 8.0,
+          ),
+          itemCount: seats.length,
+          itemBuilder: (context, index) {
+            final seatDoc = seats[index];
+            final bool isReserved = seatDoc['reserved'];
+            final String seatNumber = seatDoc['seatNumber'].toString();
 
-              return GestureDetector(
-                onTap: () {
-                  _toggleReservation(seatId, isReserved);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isReserved ? Colors.redAccent : Colors.grey,
-                    borderRadius: BorderRadius.circular(8.0),
-                    border: Border.all(color: Colors.black.withOpacity(0.2)),
-                  ),
-                  child: Center(
-                    child: Text(
-                      seatDoc['seatNumber'].toString(), // Seat number
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
+            return Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              color: isReserved ? Colors.redAccent : Colors.grey,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.event_seat, size: 40, color: Colors.white),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Seat $seatNumber',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
+                  ],
                 ),
-              );
-            },
-          ),
-        ],
-      ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }
