@@ -15,8 +15,13 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  bool _isLoading = false;
 
-  void _login() async {
+  Future<void> _login() async {
+    setState(() {
+      _isLoading = true; // Show loading indicator
+    });
+
     try {
       // Sign in with Firebase Authentication
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
@@ -37,28 +42,42 @@ class _LoginPageState extends State<LoginPage> {
 
         if (userData['is_admin'] == true) {
           // Navigate to admin page
-          Navigator.pushReplacementNamed(context, '/admin');
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/admin');
+          }
         } else {
           // Navigate to user home page
-          Navigator.pushReplacementNamed(context, '/nav');
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/nav');
+          }
         }
       } else {
         // Handle the case where the user document does not exist
         // For example, show an error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User data not found in Firestore')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User data not found in Firestore')),
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
       // Handle authentication errors
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Login failed')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Login failed')),
+        );
+      }
     } catch (e) {
       // Handle other errors
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('An unexpected error occurred')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('An unexpected error occurred')),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false; // Hide loading indicator
+      });
     }
   }
 
@@ -117,7 +136,7 @@ class _LoginPageState extends State<LoginPage> {
                     TextField(
                       controller: _usernameController,
                       decoration: InputDecoration(
-                        labelText: 'Username or Email',
+                        labelText: 'Email',
                         border: const OutlineInputBorder(),
                         filled: true,
                         fillColor: Colors.grey.withOpacity(0.2),
@@ -139,7 +158,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 32),
                     // Login Button
                     ElevatedButton(
-                      onPressed: _login,
+                      onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
                         textStyle: const TextStyle(
                             fontSize: 18), // Optional: Set text size
@@ -153,10 +172,12 @@ class _LoginPageState extends State<LoginPage> {
                               10.0), // Optional: Rounded corners
                         ),
                       ),
-                      child: const Text(
-                        'Login',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                      child: _isLoading
+                          ? const CircularProgressIndicator()
+                          : const Text(
+                              'Login',
+                              style: TextStyle(color: Colors.white),
+                            ),
                     )
                   ],
                 ),

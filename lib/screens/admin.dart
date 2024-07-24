@@ -55,82 +55,112 @@ class _AdminPageState extends State<AdminPage> {
         }
 
         final seats = snapshot.data?.docs ?? [];
-        final availableSeats = seats.where((seat) => !seat['reserved']).length;
+        final availableSeats =
+            seats.where((seat) => !seat['reserved']).toList();
         final reservedSeats = seats.where((seat) => seat['reserved']).length;
 
         return Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Card(
-                color: Colors.greenAccent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
-                elevation: 5,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Available Seats',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Card(
+                  color: Colors.greenAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15.0),
+                  ),
+                  elevation: 5,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Available Seats',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        availableSeats.toString(),
-                        style: const TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                        const SizedBox(height: 8),
+                        Text(
+                          availableSeats.length.toString(),
+                          style: const TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Card(
-                color: Colors.redAccent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
-                elevation: 5,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Reserved Seats',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                const SizedBox(height: 16),
+                Card(
+                  color: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15.0),
+                  ),
+                  elevation: 5,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Reserved Seats',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        reservedSeats.toString(),
-                        style: const TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                        const SizedBox(height: 8),
+                        Text(
+                          reservedSeats.toString(),
+                          style: const TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                const Text(
+                  'Available Seats List',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                // Expanded widget is not necessary inside SingleChildScrollView
+                ListView.builder(
+                  shrinkWrap:
+                      true, // This makes the ListView fit its content size
+                  itemCount: availableSeats.length,
+                  itemBuilder: (context, index) {
+                    final seat = availableSeats[index];
+                    final seatNumber = seat['seatNumber'] ?? 'N/A';
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: ListTile(
+                        leading:
+                            const Icon(Icons.event_seat, color: Colors.green),
+                        title: Text('Seat $seatNumber'),
+                        trailing:
+                            const Icon(Icons.check_circle, color: Colors.green),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -165,14 +195,18 @@ class _AdminPageState extends State<AdminPage> {
         'studentId': studentId,
         'course': course,
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User added successfully')),
-      );
-      Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User added successfully')),
+        );
+      }
+      if (mounted) Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add user: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add user: $e')),
+        );
+      }
     }
   }
 
@@ -196,9 +230,11 @@ class _AdminPageState extends State<AdminPage> {
           .get();
 
       if (userSnapshot.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not found')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User not found')),
+          );
+        }
         return;
       }
 
@@ -210,9 +246,11 @@ class _AdminPageState extends State<AdminPage> {
           .get();
 
       if (seatSnapshot.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Seat not found')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Seat not found')),
+          );
+        }
         return;
       }
 
@@ -220,9 +258,11 @@ class _AdminPageState extends State<AdminPage> {
       bool isReserved = seatDoc['reserved'];
 
       if (isReserved) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Seat is already reserved')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Seat is already reserved')),
+          );
+        }
         return;
       }
 
@@ -231,13 +271,17 @@ class _AdminPageState extends State<AdminPage> {
         'reservedBy': uid,
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Seat reserved successfully')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Seat reserved successfully')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to reserve seat: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to reserve seat: $e')),
+        );
+      }
     }
   }
 
@@ -259,26 +303,42 @@ class _AdminPageState extends State<AdminPage> {
           .get();
 
       if (seatSnapshot.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Seat not found')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Seat not found')),
+          );
+        }
         return;
       }
 
       DocumentSnapshot seatDoc = seatSnapshot.docs.first;
+      bool isReserved = seatDoc['reserved'];
+
+      if (!isReserved) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Seat is already available')),
+          );
+        }
+        return;
+      }
 
       await _firestore.collection('seats').doc(seatDoc.id).update({
         'reserved': false,
         'reservedBy': null,
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Seat made available successfully')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Seat made available successfully')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to make seat available: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to make seat available: $e')),
+        );
+      }
     }
   }
 
@@ -309,12 +369,15 @@ class _AdminPageState extends State<AdminPage> {
     if (shouldLogout == true) {
       try {
         await FirebaseAuth.instance.signOut();
-        Navigator.of(context)
-            .pushReplacementNamed('/login'); // Adjust the route name if needed
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/login');
+        } // Adjust the route name if needed
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to logout: $e')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to logout: $e')),
+          );
+        }
       }
     }
   }
@@ -338,9 +401,11 @@ class _AdminPageState extends State<AdminPage> {
           .get();
 
       if (userSnapshot.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not found')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User not found')),
+          );
+        }
         return;
       }
 
@@ -356,13 +421,17 @@ class _AdminPageState extends State<AdminPage> {
         await currentUser.delete();
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User deleted successfully')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User deleted successfully')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete user: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete user: $e')),
+        );
+      }
     }
   }
 
@@ -440,6 +509,65 @@ class _AdminPageState extends State<AdminPage> {
     );
   }
 
+  void _showStudentListDialog() async {
+    try {
+      // Fetch the list of students from Firestore
+      QuerySnapshot userSnapshot = await _firestore.collection('users').get();
+      List<DocumentSnapshot> users = userSnapshot.docs;
+
+      // Filter documents that have a studentId field
+      List<DocumentSnapshot> filteredUsers = users.where((user) {
+        final data = user.data() as Map<String, dynamic>;
+        return data.containsKey('studentId');
+      }).toList();
+
+      // Build the list of students with studentId and course
+      List<Widget> studentWidgets = filteredUsers.map((user) {
+        final data = user.data() as Map<String, dynamic>;
+        final studentId = data['studentId'] ?? 'No Student ID';
+        final course = data['course'] ?? 'No Course';
+
+        return ListTile(
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(studentId),
+              Text(course),
+            ],
+          ),
+        );
+      }).toList();
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('List of Students'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView(
+                  children: studentWidgets,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to list students: $e')),
+        );
+      }
+    }
+  }
+
   Widget _buildManagePage() {
     return SingleChildScrollView(
       child: Padding(
@@ -447,38 +575,127 @@ class _AdminPageState extends State<AdminPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Row for Add User and Delete User buttons
-            Card(
-              elevation: 4,
-              margin: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: _showAddUserDialog,
-                      icon: const Icon(Icons.person_add),
-                      label: const Text('Add User'),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(150, 50),
-                        backgroundColor: Colors.redAccent.withOpacity(0.8),
-                        foregroundColor: Colors.white,
+            // Row for Add User, Delete User, and List Students buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Card(
+                    elevation: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: InkWell(
+                      onTap: _showAddUserDialog,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.person_add,
+                              color: Colors.redAccent.withOpacity(0.8),
+                              size: 40,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Add User',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Add a new user to the system.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    ElevatedButton.icon(
-                      onPressed: _showDeleteUserDialog,
-                      icon: const Icon(Icons.delete),
-                      label: const Text('Delete User'),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(150, 50),
-                        backgroundColor: Colors.redAccent.withOpacity(0.8),
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Card(
+                    elevation: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: InkWell(
+                      onTap: _showDeleteUserDialog,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.delete,
+                              color: Colors.redAccent.withOpacity(0.8),
+                              size: 40,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Delete User',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Remove a user from the system.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Card(
+                    elevation: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: InkWell(
+                      onTap: _showStudentListDialog,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.list,
+                              color: Colors.redAccent.withOpacity(0.8),
+                              size: 40,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'List Students',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'View a list of all students.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             // Card for reserving seats
             Card(
@@ -498,7 +715,7 @@ class _AdminPageState extends State<AdminPage> {
                         filled: true,
                         fillColor: Colors.grey.withOpacity(0.2),
                         contentPadding: const EdgeInsets.all(16.0),
-                        enabledBorder: OutlineInputBorder(
+                        enabledBorder: const OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.transparent),
                         ),
                       ),
@@ -511,19 +728,31 @@ class _AdminPageState extends State<AdminPage> {
                         filled: true,
                         fillColor: Colors.grey.withOpacity(0.2),
                         contentPadding: const EdgeInsets.all(16.0),
-                        enabledBorder: OutlineInputBorder(
+                        enabledBorder: const OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.transparent),
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _reserveSeatForUser,
-                      child: const Text('Reserve Seat'),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                        backgroundColor: Colors.redAccent.withOpacity(0.8),
-                        foregroundColor: Colors.white,
+                    InkWell(
+                      onTap: _reserveSeatForUser,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Reserve Seat',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -548,19 +777,31 @@ class _AdminPageState extends State<AdminPage> {
                         filled: true,
                         fillColor: Colors.grey.withOpacity(0.2),
                         contentPadding: const EdgeInsets.all(16.0),
-                        enabledBorder: OutlineInputBorder(
+                        enabledBorder: const OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.transparent),
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _makeSeatAvailable,
-                      child: const Text('Make Available'),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                        backgroundColor: Colors.redAccent.withOpacity(0.8),
-                        foregroundColor: Colors.white,
+                    InkWell(
+                      onTap: _makeSeatAvailable,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Make Available',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],

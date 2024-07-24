@@ -69,19 +69,25 @@ class _HomePageState extends State<HomePage> {
 
       // Show success message if no errors occurred
       if (errorMessages.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Seats reserved successfully')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Seats reserved successfully')),
+          );
+        }
       } else {
         // Show all error messages
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessages.join('\n'))),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMessages.join('\n'))),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to reserve seats: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to reserve seats: $e')),
+        );
+      }
     }
   }
 
@@ -194,12 +200,12 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showReservationDialog,
+        backgroundColor: Colors.white,
+        tooltip: 'Reserve Seats',
         child: const Icon(
           Icons.add,
           color: Colors.redAccent,
         ),
-        backgroundColor: Colors.white,
-        tooltip: 'Reserve Seats',
       ),
     );
   }

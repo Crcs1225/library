@@ -3,22 +3,32 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      try {
-        // Check user status after the frame is built
-        final user = FirebaseAuth.instance.currentUser;
+  SplashScreenState createState() => SplashScreenState();
+}
 
-        if (user != null) {
-          // User is logged in, check if user is admin
-          final adminDoc =
-              FirebaseFirestore.instance.collection('users').doc(user.uid);
-          final adminSnapshot = await adminDoc.get();
+class SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkUserStatus();
+  }
 
+  Future<void> _checkUserStatus() async {
+    try {
+      // Fetch current user
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        // User is logged in, fetch admin status
+        final adminDoc =
+            FirebaseFirestore.instance.collection('users').doc(user.uid);
+        final adminSnapshot = await adminDoc.get();
+
+        if (mounted) {
           if (adminSnapshot.exists &&
               adminSnapshot.data()?['is_admin'] == true) {
             // Admin is logged in, navigate to the admin page
@@ -27,17 +37,23 @@ class SplashScreen extends StatelessWidget {
             // Regular user is logged in, navigate to the homepage
             Navigator.pushReplacementNamed(context, '/nav');
           }
-        } else {
-          // User is not logged in, navigate to the login page
+        }
+      } else {
+        // User is not logged in, navigate to the login page
+        if (mounted) {
           Navigator.pushReplacementNamed(context, '/login');
         }
-      } catch (e) {
-        // Handle any errors during the authentication or Firestore operations
-        print('Error during navigation check: $e');
+      }
+    } catch (e) {
+      // Handle any errors during the authentication or Firestore operations
+      if (mounted) {
         Navigator.pushReplacementNamed(context, '/login');
       }
-    });
+    }
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
         child: Column(
@@ -48,8 +64,8 @@ class SplashScreen extends StatelessWidget {
               width: 200,
               height: 200,
             ),
-            SizedBox(height: 20),
-            CircularProgressIndicator(),
+            const SizedBox(height: 20),
+            const CircularProgressIndicator(),
           ],
         ),
       ), // Placeholder for logo or other content

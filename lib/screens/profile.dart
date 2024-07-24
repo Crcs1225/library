@@ -30,13 +30,17 @@ class _ProfilePageState extends State<ProfilePage> {
         'reservedBy': null, // Set reservedBy to null
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reservation deleted successfully')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reservation deleted successfully')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete reservation: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete reservation: $e')),
+        );
+      }
     }
   }
 
@@ -71,15 +75,21 @@ class _ProfilePageState extends State<ProfilePage> {
       await _auth.signOut();
 
       // Navigate to login screen and remove all previous routes from the stack
-      Navigator.pushReplacementNamed(context, '/login');
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logged out successfully')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Logged out successfully')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to log out: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to log out: $e')),
+        );
+      }
     }
   }
 
@@ -211,9 +221,15 @@ class _ProfilePageState extends State<ProfilePage> {
                         double.infinity, // Fills the remaining horizontal space
                     child: ElevatedButton(
                       onPressed: _logout,
-                      child: const Text('Logout'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: Colors
+                            .redAccent, // Use primary instead of backgroundColor
+                        minimumSize: const Size(
+                            double.infinity, 60), // Set the minimum height
+                      ),
+                      child: const Text(
+                        'Logout',
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ),
