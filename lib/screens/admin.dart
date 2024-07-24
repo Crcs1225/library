@@ -590,7 +590,7 @@ class _AdminPageState extends State<AdminPage> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.person_add,
                               color: Colors.redAccent,
                               size: 40,
@@ -629,7 +629,7 @@ class _AdminPageState extends State<AdminPage> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.delete,
                               color: Colors.redAccent,
                               size: 40,
@@ -668,7 +668,7 @@ class _AdminPageState extends State<AdminPage> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.list,
                               color: Colors.redAccent,
                               size: 40,
