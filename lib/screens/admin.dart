@@ -66,7 +66,7 @@ class _AdminPageState extends State<AdminPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Card(
-                  color: Colors.greenAccent,
+                  color: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15.0),
                   ),
@@ -151,10 +151,10 @@ class _AdminPageState extends State<AdminPage> {
                       margin: const EdgeInsets.symmetric(vertical: 4.0),
                       child: ListTile(
                         leading:
-                            const Icon(Icons.event_seat, color: Colors.green),
+                            const Icon(Icons.event_seat, color: Colors.white),
                         title: Text('Seat $seatNumber'),
                         trailing:
-                            const Icon(Icons.check_circle, color: Colors.green),
+                            const Icon(Icons.check_circle, color: Colors.white),
                       ),
                     );
                   },
@@ -592,7 +592,7 @@ class _AdminPageState extends State<AdminPage> {
                           children: [
                             Icon(
                               Icons.person_add,
-                              color: Colors.redAccent.withOpacity(0.8),
+                              color: Colors.redAccent,
                               size: 40,
                             ),
                             const SizedBox(height: 8),
@@ -631,7 +631,7 @@ class _AdminPageState extends State<AdminPage> {
                           children: [
                             Icon(
                               Icons.delete,
-                              color: Colors.redAccent.withOpacity(0.8),
+                              color: Colors.redAccent,
                               size: 40,
                             ),
                             const SizedBox(height: 8),
@@ -670,7 +670,7 @@ class _AdminPageState extends State<AdminPage> {
                           children: [
                             Icon(
                               Icons.list,
-                              color: Colors.redAccent.withOpacity(0.8),
+                              color: Colors.redAccent,
                               size: 40,
                             ),
                             const SizedBox(height: 8),
@@ -740,7 +740,7 @@ class _AdminPageState extends State<AdminPage> {
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: Colors.redAccent.withOpacity(0.8),
+                          color: Colors.redAccent,
                           borderRadius: BorderRadius.circular(8.0),
                         ),
                         child: const Center(
@@ -789,7 +789,7 @@ class _AdminPageState extends State<AdminPage> {
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: Colors.redAccent.withOpacity(0.8),
+                          color: Colors.redAccent,
                           borderRadius: BorderRadius.circular(8.0),
                         ),
                         child: const Center(
