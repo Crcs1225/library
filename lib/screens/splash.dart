@@ -28,27 +28,32 @@ class SplashScreenState extends State<SplashScreen> {
             FirebaseFirestore.instance.collection('users').doc(user.uid);
         final adminSnapshot = await adminDoc.get();
 
-        if (mounted) {
-          if (adminSnapshot.exists &&
-              adminSnapshot.data()?['is_admin'] == true) {
-            // Admin is logged in, navigate to the admin page
-            Navigator.pushReplacementNamed(context, '/admin');
-          } else {
-            // Regular user is logged in, navigate to the homepage
-            Navigator.pushReplacementNamed(context, '/nav');
+        // Schedule navigation after the current frame is complete
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            if (adminSnapshot.exists &&
+                adminSnapshot.data()?['is_admin'] == true) {
+              Navigator.pushReplacementNamed(context, '/admin');
+            } else {
+              Navigator.pushReplacementNamed(context, '/nav');
+            }
           }
-        }
+        });
       } else {
         // User is not logged in, navigate to the login page
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/login');
-        }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/login');
+          }
+        });
       }
     } catch (e) {
       // Handle any errors during the authentication or Firestore operations
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+      });
     }
   }
 
@@ -59,10 +64,25 @@ class SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SvgPicture.asset(
-              'assets/bsu-logo.svg',
-              width: 200,
-              height: 200,
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.5),
+                    spreadRadius: 1,
+                    blurRadius: 6,
+                    offset: const Offset(0, 3), // changes position of shadow
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(16),
+              child: SvgPicture.asset(
+                'assets/bsu-logo.svg',
+                width: 150,
+                height: 150,
+              ),
             ),
             const SizedBox(height: 20),
             const CircularProgressIndicator(),
