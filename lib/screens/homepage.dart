@@ -211,6 +211,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSeatsSection(String title, List<QueryDocumentSnapshot> seats) {
+    seats.sort(
+        (a, b) => (a['seatNumber'] as int).compareTo(b['seatNumber'] as int));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

@@ -17,7 +17,21 @@ class _LoginPageState extends State<LoginPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isLoading = false;
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   Future<void> _login() async {
+    final email = _usernameController.text;
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      _showError('Email and password must not be empty');
+      return;
+    }
+
     setState(() {
       _isLoading = true; // Show loading indicator
     });
@@ -25,8 +39,8 @@ class _LoginPageState extends State<LoginPage> {
     try {
       // Sign in with Firebase Authentication
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: _usernameController.text,
-        password: _passwordController.text,
+        email: email,
+        password: password,
       );
 
       // Fetch the user from Firestore
@@ -54,26 +68,14 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         // Handle the case where the user document does not exist
         // For example, show an error message
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('User data not found in Firestore')),
-          );
-        }
+        _showError('User data not found in Firestore');
       }
     } on FirebaseAuthException catch (e) {
       // Handle authentication errors
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Login failed')),
-        );
-      }
+      _showError(e.message ?? 'Login failed');
     } catch (e) {
       // Handle other errors
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('An unexpected error occurred')),
-        );
-      }
+      _showError('An unexpected error occurred');
     } finally {
       setState(() {
         _isLoading = false; // Hide loading indicator
@@ -178,7 +180,7 @@ class _LoginPageState extends State<LoginPage> {
                               'Login',
                               style: TextStyle(color: Colors.white),
                             ),
-                    )
+                    ),
                   ],
                 ),
               ),

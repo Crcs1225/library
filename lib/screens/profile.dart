@@ -24,10 +24,9 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     try {
-      // Set reservedBy to null and reserved to false
       await _firestore.collection('seats').doc(seatId).update({
         'reserved': false,
-        'reservedBy': null, // Set reservedBy to null
+        'reservedBy': null,
       });
 
       if (mounted) {
@@ -74,7 +73,6 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       await _auth.signOut();
 
-      // Navigate to login screen and remove all previous routes from the stack
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/login');
       }
@@ -111,7 +109,6 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: CustomScrollView(
           slivers: [
-            // User information
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -166,6 +163,7 @@ class _ProfilePageState extends State<ProfilePage> {
               stream: _firestore
                   .collection('seats')
                   .where('reservedBy', isEqualTo: user.uid)
+                  // Added orderBy clause here
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -217,15 +215,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
                 child: Center(
                   child: SizedBox(
-                    width:
-                        double.infinity, // Fills the remaining horizontal space
+                    width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _logout,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors
-                            .redAccent, // Use primary instead of backgroundColor
-                        minimumSize: const Size(
-                            double.infinity, 60), // Set the minimum height
+                        backgroundColor: Colors.redAccent,
+                        minimumSize: const Size(double.infinity, 60),
                       ),
                       child: const Text(
                         'Logout',

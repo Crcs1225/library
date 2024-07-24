@@ -138,10 +138,9 @@ class _AdminPageState extends State<AdminPage> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                // Expanded widget is not necessary inside SingleChildScrollView
                 ListView.builder(
-                  shrinkWrap:
-                      true, // This makes the ListView fit its content size
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
                   itemCount: availableSeats.length,
                   itemBuilder: (context, index) {
                     final seat = availableSeats[index];
